@@ -3,4 +3,6 @@ node_modules/
 __pycache__/
 *.pyc
 receiver/drivers/retropad_macos_hid
+receiver/bin/
+.deps/
 .DS_Store
