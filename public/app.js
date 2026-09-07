@@ -8,11 +8,11 @@ function emitButton(name,pressed){
   send({type:'input', inputType:'button', profile:current?.id, button:name, pressed, t:performance.now()});
 }
 function bindButton(el){
-  const name=el.dataset.btn;
-  const down=e=>{e.preventDefault(); el.setPointerCapture?.(e.pointerId); el.classList.add('pressed'); emitButton(name,true)};
-  const up=e=>{e.preventDefault(); el.classList.remove('pressed'); emitButton(name,false)};
-  el.addEventListener('pointerdown',down); el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
-  el.addEventListener('pointerleave',e=>{if(held.has(name))up(e)});
+  const name=el.dataset.btn; let activePointer=null;
+  const down=e=>{e.preventDefault(); activePointer=e.pointerId; el.setPointerCapture?.(e.pointerId); el.classList.add('pressed'); emitButton(name,true)};
+  const up=e=>{if(activePointer!==null && e.pointerId!==activePointer)return; e.preventDefault(); activePointer=null; el.classList.remove('pressed'); emitButton(name,false)};
+  el.addEventListener('pointerdown',down,{passive:false}); el.addEventListener('pointerup',up,{passive:false}); el.addEventListener('pointercancel',up,{passive:false});
+  el.addEventListener('lostpointercapture',()=>{ if(activePointer!==null){ activePointer=null; el.classList.remove('pressed'); emitButton(name,false); } });
 }
 function makeButton(name, cls=''){ const b=document.createElement('button'); b.textContent=name.replaceAll('_',' '); b.dataset.btn=name; b.className=[cls,`btn-${name.toLowerCase().replaceAll('_','-')}`].filter(Boolean).join(' '); bindButton(b); return b; }
 function makeStick(id, label){
@@ -28,7 +28,7 @@ function bindStick(el, axis){
     if(Math.abs(x-lastX)>.015||Math.abs(y-lastY)>.015){lastX=x;lastY=y;send({type:'input',inputType:'axis',profile:current?.id,axis,x:+x.toFixed(3),y:+y.toFixed(3),t:performance.now()});}
   };
   const release=e=>{if(pointer!==null && e.pointerId!==pointer)return; pointer=null; nub.style.transform='translate(0,0)';lastX=lastY=0;send({type:'input',inputType:'axis',profile:current?.id,axis,x:0,y:0,t:performance.now()});};
-  el.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;el.setPointerCapture?.(e.pointerId);update(e)});
+  el.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;el.setPointerCapture?.(e.pointerId);update(e)},{passive:false});
   el.addEventListener('pointermove',e=>{if(pointer===e.pointerId)update(e)}); el.addEventListener('pointerup',release); el.addEventListener('pointercancel',release);
 }
 function render(p){
