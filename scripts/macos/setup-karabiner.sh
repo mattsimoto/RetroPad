@@ -45,6 +45,32 @@ fi
 echo "Activating signed DriverKit extension..."
 "$MANAGER" activate || true
 
+# The Karabiner example client is generated with XcodeGen and built with
+# xcodebuild. Apple's standalone Command Line Tools are not sufficient for
+# xcodebuild; a full Xcode installation is required.
+if [[ -d "/Applications/Xcode.app/Contents/Developer" ]]; then
+  CURRENT_DEV="$(xcode-select -p 2>/dev/null || true)"
+  if [[ "$CURRENT_DEV" != "/Applications/Xcode.app/Contents/Developer" ]]; then
+    echo "Full Xcode found. Switching active developer directory..."
+    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+  fi
+else
+  echo
+  echo "Full Xcode is required to build the RetroPad Karabiner bridge."
+  echo "The standalone Command Line Tools are installed, but xcodebuild needs Xcode.app."
+  echo
+  echo "Install Xcode from the Mac App Store, open it once to finish setup, then run:"
+  echo "  sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+  echo "  cd $ROOT"
+  echo "  bash scripts/macos/setup-karabiner.sh"
+  exit 4
+fi
+
+if ! xcodebuild -version >/dev/null 2>&1; then
+  echo "Xcode is installed but not ready yet. Open Xcode once, accept its license/setup prompts, then rerun this script."
+  exit 5
+fi
+
 if [[ ! -d "$DEPS/.git" ]]; then
   echo "Fetching the official Karabiner VirtualHIDDevice client headers..."
   git clone --depth 1 https://github.com/pqrs-org/Karabiner-DriverKit-VirtualHIDDevice.git "$DEPS"
