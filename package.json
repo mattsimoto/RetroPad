@@ -1,6 +1,6 @@
 {
   "name": "retropad",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "Turn phones and tablets into low-latency retro game controllers over a local network.",
   "scripts": {
