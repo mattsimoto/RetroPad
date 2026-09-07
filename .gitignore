@@ -1,0 +1,6 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+receiver/drivers/retropad_macos_hid
+.DS_Store
