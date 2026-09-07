@@ -21,7 +21,7 @@ def main():
     ap=argparse.ArgumentParser(description='RetroPad native receiver')
     ap.add_argument('--host', default='127.0.0.1:8080', help='RetroPad server host:port')
     ap.add_argument('--room', help='6-character pairing code. Omit to create one.')
-    ap.add_argument('--driver', default='auto', choices=['auto','keyboard','macos-openemu','macos-hid','linux-uinput','windows-vgamepad'])
+    ap.add_argument('--driver', default='auto', choices=['auto','keyboard','macos-karabiner','macos-openemu','macos-hid','linux-uinput','windows-vgamepad'])
     args=ap.parse_args()
     base=f'http://{args.host}'
     room=(args.room or http_json(base+'/api/new-room')['room']).upper()
