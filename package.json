@@ -6,5 +6,8 @@
   "scripts": {
     "start": "node server/server.js",
     "test": "node --check server/server.js && node --check public/app.js && node --check public/receiver.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }
