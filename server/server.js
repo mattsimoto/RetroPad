@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 
 const PORT = Number(process.env.PORT || 8080);
+const VERSION = '0.3.3';
 const ROOT = path.join(__dirname, '..', 'public');
 const MIME = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'};
 const rooms = new Map();
@@ -36,7 +37,7 @@ function handleMessage(ws,msg){
 const server=http.createServer(async(req,res)=>{
   const u=new URL(req.url,`http://${req.headers.host||'localhost'}`);
   if(u.pathname==='/api/new-room'){let id;do{id=roomCode();}while(rooms.has(id));getRoom(id);res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify({room:id}));}
-  if(u.pathname==='/api/info'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify({name:'RetroPad',version:'0.3.2',port:PORT,ips:localIPs(),maxPlayers:4,qr:true}));}
+  if(u.pathname==='/api/info'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify({name:'RetroPad',version:VERSION,port:PORT,ips:localIPs(),maxPlayers:4,qr:true}));}
   if(u.pathname==='/api/qr'){
     const text=u.searchParams.get('text')||'';
     if(!text||text.length>1000){res.writeHead(400,{'Content-Type':'text/plain'});return res.end('Invalid QR text');}
@@ -50,4 +51,4 @@ const server=http.createServer(async(req,res)=>{
 server.on('upgrade',(req,socket)=>{
   const u=new URL(req.url,`http://${req.headers.host||'localhost'}`);if(u.pathname!=='/ws')return socket.destroy();const key=req.headers['sec-websocket-key'];if(!key)return socket.destroy();const accept=crypto.createHash('sha1').update(key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: '+accept+'\r\n\r\n');const ws=new WSConnection(socket);ws.onmessage=m=>handleMessage(ws,m);ws.onclose=()=>release(ws);
 });
-server.listen(PORT,'0.0.0.0',()=>{console.log(`RetroPad v0.3.2 running on port ${PORT}`);for(const ip of localIPs())console.log(`Phone:    http://${ip}:${PORT}/`);console.log(`Receiver: http://localhost:${PORT}/receiver.html`);});
+server.listen(PORT,'0.0.0.0',()=>{console.log(`RetroPad v${VERSION} running on port ${PORT}`);for(const ip of localIPs())console.log(`Phone:    http://${ip}:${PORT}/`);console.log(`Receiver: http://localhost:${PORT}/receiver.html`);});
