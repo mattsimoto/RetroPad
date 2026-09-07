@@ -1,0 +1,10 @@
+{
+  "name": "retropad",
+  "version": "0.3.2",
+  "private": true,
+  "description": "Turn phones and tablets into low-latency retro game controllers over a local network.",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --check server/server.js && node --check public/app.js && node --check public/receiver.js"
+  }
+}
