@@ -1,0 +1,12 @@
+[
+  {"id":"nes","name":"Nintendo Entertainment System","kind":"digital","face":["B","A"],"center":["SELECT","START"],"shoulders":[],"analog":false},
+  {"id":"snes","name":"Super Nintendo","kind":"digital","face":["Y","X","B","A"],"center":["SELECT","START"],"shoulders":["L","R"],"analog":false},
+  {"id":"genesis3","name":"Genesis / Mega Drive 3-button","kind":"digital","face":["A","B","C"],"center":["START"],"shoulders":[],"analog":false},
+  {"id":"genesis6","name":"Genesis / Mega Drive 6-button","kind":"digital","face":["X","Y","Z","A","B","C"],"center":["MODE","START"],"shoulders":[],"analog":false},
+  {"id":"gb","name":"Game Boy / Game Boy Color","kind":"digital","face":["B","A"],"center":["SELECT","START"],"shoulders":[],"analog":false},
+  {"id":"gba","name":"Game Boy Advance","kind":"digital","face":["B","A"],"center":["SELECT","START"],"shoulders":["L","R"],"analog":false},
+  {"id":"n64","name":"Nintendo 64","kind":"analog","face":["B","A","C_LEFT","C_UP","C_DOWN","C_RIGHT"],"center":["START"],"shoulders":["L","Z","R"],"analog":true},
+  {"id":"ps1","name":"PlayStation / DualShock","kind":"analog","face":["SQUARE","TRIANGLE","CROSS","CIRCLE"],"center":["SELECT","START"],"shoulders":["L1","L2","R1","R2"],"analog":true,"dualAnalog":true},
+  {"id":"arcade6","name":"Arcade 6-button","kind":"digital","face":["1","2","3","4","5","6"],"center":["COIN","START"],"shoulders":[],"analog":false},
+  {"id":"generic","name":"Generic Gamepad","kind":"analog","face":["X","Y","A","B"],"center":["SELECT","START"],"shoulders":["L1","L2","R1","R2"],"analog":true,"dualAnalog":true}
+]
