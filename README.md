@@ -18,7 +18,6 @@ The current build supports:
 - controller profiles for NES, SNES, Genesis / Mega Drive, Game Boy, GBA, Nintendo 64, PlayStation, arcade, and generic gamepad
 - analog and digital control events over local WebSockets
 - responsive phone layouts with fullscreen support
-- built-in QR generation with no npm dependency
 - browser receiver / diagnostics page
 - native Python receiver drivers
 
@@ -44,11 +43,14 @@ Native receiver
 OpenEmu / RetroArch / RetroPie / emulator
 ```
 
-## Run the server
+## Install and run
 
-Requires Node.js 18+.
+Requires Node.js 18+ and Python 3.
 
 ```bash
+git clone https://github.com/mattsimoto/RetroPad.git
+cd RetroPad
+npm install
 npm start
 ```
 
@@ -66,7 +68,7 @@ Scan the displayed QR code with a phone on the same local network.
 python3 -m pip install -r receiver/requirements.txt
 ```
 
-Example:
+Example for macOS:
 
 ```bash
 python3 receiver/retropad_receiver.py \
