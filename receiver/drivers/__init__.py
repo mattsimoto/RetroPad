@@ -8,8 +8,17 @@ def create_driver(choice="auto"):
         if choice == "macos-hid":
             raise RuntimeError(
                 "Direct macOS virtual HID creation is restricted by Apple entitlement requirements. "
-                "Use --driver macos-openemu for OpenEmu, or --driver keyboard for generic keyboard fallback."
+                "Use --driver macos-karabiner for OpenEmu hardware-level input, "
+                "or --driver macos-openemu only as a synthetic-keyboard fallback."
             )
+        if choice in ("auto", "macos-karabiner"):
+            try:
+                from .macos_karabiner import MacOSKarabinerDriver
+                return MacOSKarabinerDriver()
+            except Exception as e:
+                if choice == "macos-karabiner":
+                    raise
+                print(f"macOS Karabiner hardware bridge unavailable ({e}); using synthetic OpenEmu fallback.")
         if choice in ("auto", "macos-openemu"):
             from .macos_openemu import MacOSOpenEmuDriver
             return MacOSOpenEmuDriver()
