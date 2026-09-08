@@ -1,5 +1,17 @@
 let ws=null, room='', profiles=[], current=null, player=0, reconnectTimer=null;
 const held=new Set(); const $=s=>document.querySelector(s);
+const FALLBACK_PROFILES=[
+{id:'nes',name:'Nintendo Entertainment System',kind:'digital',face:['B','A'],center:['SELECT','START'],shoulders:[],analog:false},
+{id:'snes',name:'Super Nintendo',kind:'digital',face:['Y','X','B','A'],center:['SELECT','START'],shoulders:['L','R'],analog:false},
+{id:'genesis3',name:'Genesis / Mega Drive 3-button',kind:'digital',face:['A','B','C'],center:['START'],shoulders:[],analog:false},
+{id:'genesis6',name:'Genesis / Mega Drive 6-button',kind:'digital',face:['X','Y','Z','A','B','C'],center:['MODE','START'],shoulders:[],analog:false},
+{id:'gb',name:'Game Boy / Game Boy Color',kind:'digital',face:['B','A'],center:['SELECT','START'],shoulders:[],analog:false},
+{id:'gba',name:'Game Boy Advance',kind:'digital',face:['B','A'],center:['SELECT','START'],shoulders:['L','R'],analog:false},
+{id:'n64',name:'Nintendo 64',kind:'analog',face:['B','A','C_LEFT','C_UP','C_DOWN','C_RIGHT'],center:['START'],shoulders:['L','Z','R'],analog:true},
+{id:'ps1',name:'PlayStation / DualShock',kind:'analog',face:['SQUARE','TRIANGLE','CROSS','CIRCLE'],center:['SELECT','START'],shoulders:['L1','L2','R1','R2'],analog:true,dualAnalog:true},
+{id:'arcade6',name:'Arcade 6-button',kind:'digital',face:['1','2','3','4','5','6'],center:['COIN','START'],shoulders:[],analog:false},
+{id:'generic',name:'Generic Gamepad',kind:'analog',face:['X','Y','A','B'],center:['SELECT','START'],shoulders:['L1','L2','R1','R2'],analog:true,dualAnalog:true}
+];
 function vibrate(){ if(navigator.vibrate) navigator.vibrate(7); }
 function socketURL(){ return `${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws`; }
 function send(obj){ if(ws?.readyState===1) ws.send(JSON.stringify(obj)); }
@@ -45,15 +57,24 @@ function render(p){
 function releaseAll(){ for(const b of [...held]) emitButton(b,false); }
 function connect(code){
   room=code.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6); if(room.length!==6)return; localStorage.room=room;
-  if(ws) try{ws.close()}catch{}; clearTimeout(reconnectTimer); ws=new WebSocket(socketURL());
-  ws.onopen=()=>{send({type:'join',role:'controller',room,player:player||undefined,name:navigator.platform||'Phone'});$('#status').textContent='Pairing…';};
+  if(ws) try{ws.close()}catch{}; clearTimeout(reconnectTimer); $('#status').textContent='Connecting…'; ws=new WebSocket(socketURL());
+  const timer=setTimeout(()=>{if(ws && ws.readyState!==1){$('#status').textContent='Cannot reach receiver'; try{ws.close()}catch{}}},5000);
+  ws.onopen=()=>{clearTimeout(timer);send({type:'join',role:'controller',room,player:player||undefined,name:navigator.platform||'Phone'});$('#status').textContent='Pairing…';};
+  ws.onerror=()=>{$('#status').textContent='Network/WebSocket error';};
   ws.onmessage=e=>{const m=JSON.parse(e.data); if(m.type==='joined'&&m.player){player=m.player;$('#playerBadge').textContent=`P${player}`;$('#join').classList.add('hidden');document.body.classList.add('paired');}
     if(m.type==='status') $('#status').textContent=m.receivers>0?'Connected':'Waiting for receiver';
     if(m.type==='error'){alert(m.message);$('#status').textContent='Pairing failed';$('#join').classList.remove('hidden');}};
-  ws.onclose=()=>{releaseAll();$('#status').textContent='Disconnected'; if(!$('#join').classList.contains('hidden'))return; reconnectTimer=setTimeout(()=>connect(room),1000);};
+  ws.onclose=()=>{clearTimeout(timer);releaseAll();$('#status').textContent='Disconnected'; if(!$('#join').classList.contains('hidden'))return; reconnectTimer=setTimeout(()=>connect(room),1000);};
 }
-fetch('/profiles.json').then(r=>r.json()).then(ps=>{profiles=ps;const sel=$('#profile');ps.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.append(o)});const id=localStorage.profile||'snes';sel.value=id;render(ps.find(p=>p.id===id)||ps[0]);sel.onchange=()=>render(ps.find(p=>p.id===sel.value));});
+function bootProfiles(ps){
+  profiles=ps;const sel=$('#profile');sel.innerHTML='';ps.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.append(o)});const id=localStorage.profile||'snes';sel.value=id;render(ps.find(p=>p.id===id)||ps[0]);sel.onchange=()=>render(ps.find(p=>p.id===sel.value));
+}
+const profileTimeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('profiles timeout')),2500));
+Promise.race([fetch('/profiles.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`profiles ${r.status}`);return r.json()}),profileTimeout])
+  .then(bootProfiles)
+  .catch(err=>{console.warn('RetroPad profiles fallback:',err);bootProfiles(FALLBACK_PROFILES);$('#status').textContent='Loaded offline profile';});
 $('#joinBtn').onclick=()=>connect($('#room').value.trim()); $('#disconnect').onclick=()=>{document.body.classList.remove('paired');$('#join').classList.remove('hidden');if(ws)ws.close();}; $('#fullscreen').onclick=async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}catch{}}; $('#room').value=new URLSearchParams(location.search).get('room')||localStorage.room||'';
 document.addEventListener('contextmenu',e=>e.preventDefault()); document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAll()});
-window.addEventListener('blur',releaseAll); if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+window.addEventListener('blur',releaseAll);
+if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
 if($('#room').value.length===6 && new URLSearchParams(location.search).has('room')) connect($('#room').value);
