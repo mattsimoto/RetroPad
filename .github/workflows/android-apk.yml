@@ -8,6 +8,9 @@ on:
       - '.github/workflows/android-apk.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,7 +25,26 @@ jobs:
           gradle-version: '8.10.2'
       - name: Build debug APK
         run: gradle -p android assembleDebug --stacktrace
+      - name: Prepare APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk RetroPad-Android-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: RetroPad-Android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: RetroPad-Android-debug.apk
+      - name: Publish rolling Android alpha release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=android-alpha
+          ASSET=RetroPad-Android-debug.apk
+          git tag -f "$TAG" "$GITHUB_SHA"
+          git push -f origin "refs/tags/$TAG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET" --clobber
+          else
+            gh release create "$TAG" "$ASSET" \
+              --title "RetroPad Android Alpha" \
+              --notes "Rolling alpha build of the RetroPad Android companion. Install the APK on Android for local testing." \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
