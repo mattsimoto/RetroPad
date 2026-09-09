@@ -1,11 +1,14 @@
 package com.altocitylimits.retropad
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -22,7 +25,10 @@ import org.webrtc.*
 import java.util.concurrent.TimeUnit
 
 class MainActivity : Activity() {
-    companion object { private const val REQ_CAPTURE = 9001 }
+    companion object {
+        private const val REQ_CAPTURE = 9001
+        private const val REQ_NEARBY = 9002
+    }
 
     private lateinit var status: TextView
     private lateinit var detail: TextView
@@ -113,7 +119,30 @@ class MainActivity : Activity() {
         detail.text = "Room ${room}. Tap Start Cast, approve Android screen sharing, then open FullRoid."
         castButton.visibility = View.VISIBLE
         castButton.isEnabled = true
+        ensureLanPermissionAndConnect()
+    }
+
+    private fun ensureLanPermissionAndConnect() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED) {
+            status.text = "Allow nearby-device access"
+            detail.text = "RetroPad needs local-network access to reach the display on your Wi-Fi."
+            requestPermissions(arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES), REQ_NEARBY)
+            return
+        }
         connectSignal()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_NEARBY) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                status.text = "Local network allowed"
+                connectSignal()
+            } else {
+                status.text = "Nearby-device access is required"
+                detail.text = "Allow Nearby devices for RetroPad, then scan the display QR again."
+            }
+        }
     }
 
     private fun connectSignal() {
@@ -154,7 +183,7 @@ class MainActivity : Activity() {
                 signalOpen = false
                 runOnUiThread {
                     status.text = "Could not reach RetroPad Display"
-                    detail.text = t.message ?: "Check that both devices are on the same Wi-Fi network."
+                    detail.text = "${t.javaClass.simpleName}: ${t.message ?: "LAN connection failed"}"
                 }
             }
         })
