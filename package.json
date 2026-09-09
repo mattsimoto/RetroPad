@@ -1,11 +1,11 @@
 {
   "name": "retropad",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "private": true,
-  "description": "Turn phones and tablets into low-latency retro game controllers over a local network.",
+  "description": "Cast Android retro games to a larger display while keeping the phone as the controller.",
   "scripts": {
     "start": "node server/server.js",
-    "test": "node --check server/server.js && node --check public/app.js && node --check public/receiver.js"
+    "test": "node --check server/server.js && node --check public/display.js && node --check public/app.js && node --check public/receiver.js"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
