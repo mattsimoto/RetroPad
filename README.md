@@ -1,120 +1,105 @@
 # RetroPad
 
-RetroPad turns phones and tablets into low-latency retro game controllers over a local network.
+RetroPad turns an Android phone running a retro-gaming suite such as FullRoid into a console for a larger screen.
 
-The project uses one phone controller UI and a cross-platform native receiver layer:
+## v0.4 project scope
 
-- macOS / OpenEmu: Karabiner DriverKit hardware-level virtual keyboard bridge
-- Linux / Raspberry Pi / RetroPie: `uinput` / `evdev` virtual gamepads
-- Windows: virtual XInput gamepads with keyboard fallback
-- Android / FullRoid: native bridge planned
-
-## Current status
-
-RetroPad currently supports:
-
-- QR-code and six-character pairing
-- up to four simultaneous phones as P1-P4
-- controller profiles for NES, SNES, Genesis / Mega Drive, Game Boy, GBA, Nintendo 64, PlayStation, arcade, and generic gamepad
-- analog and digital control events over local WebSockets
-- responsive phone layouts with fullscreen support
-- browser receiver / diagnostics page
-- native Python receiver drivers
-
-## Architecture
+The Android phone is the gaming system. The Mac, PC, or smart TV is only a low-latency display target.
 
 ```text
-Phone / tablet PWA
-       |
-       | local WebSocket
-       v
-RetroPad server
-       |
-       v
-Native receiver
-       |
-       +-- macOS: Karabiner DriverKit virtual keyboard
-       +-- Linux / Raspberry Pi: uinput / evdev
-       +-- Windows: XInput
-       +-- Android: native bridge planned
-       v
-OpenEmu / RetroArch / RetroPie / emulator
+Android phone
+├── FullRoid / emulator
+├── ROM + game state
+├── RetroPad native Android companion
+│   ├── controller overlay
+│   ├── screen/audio capture
+│   └── WebRTC sender
+│
+└──────── local Wi-Fi / WebRTC ────────>
+
+Mac / PC / TV
+└── RetroPad Display
+    ├── QR pairing
+    └── low-latency game video/audio
 ```
 
-## Install and run
+The target experience is:
 
-Requires Node.js 18+ and Python 3.
+1. Open RetroPad Display on a Mac, PC, or TV.
+2. A QR code appears.
+3. Scan it with the RetroPad Android companion.
+4. Launch a ROM in FullRoid.
+5. The game appears on the larger display.
+6. The phone shows a console-specific controller layout and remains the controller.
+
+## Why the scope changed
+
+Earlier prototypes made the phone a remote controller for an emulator running on Windows or macOS. That required platform-specific virtual-controller drivers and created unnecessary complexity.
+
+In v0.4, FullRoid stays responsible for emulation. RetroPad focuses on display streaming, pairing, and controller UX.
+
+## Current v0.4 work
+
+- WebRTC signaling through the RetroPad Node server
+- browser-based display receiver for Mac/PC/TV
+- QR room pairing
+- native Android companion architecture
+- console-specific controller profiles
+- local-network-first design
+
+## Legacy prototype
+
+The existing `public/` controller UI and `receiver/` native drivers are retained temporarily as reference from v0.3.x. They are no longer the primary architecture.
+
+## Run the display server
+
+Requires Node.js 18+.
 
 ```bash
 git clone https://github.com/mattsimoto/RetroPad.git
 cd RetroPad
 npm install
-python3 -m pip install -r receiver/requirements.txt
 npm start
 ```
 
-Open the receiver page on the gaming computer:
+Then open:
 
 ```text
-http://localhost:8080/receiver.html
+http://localhost:8080/display.html
 ```
 
-Scan the displayed QR code with a phone on the same local network.
+The display page creates a six-character room and QR pairing code.
 
-## macOS / OpenEmu
+## Development roadmap
 
-Synthetic keyboard injection can register while assigning OpenEmu controls but fail inside a running game. RetroPad therefore uses the signed Karabiner DriverKit VirtualHIDDevice as its preferred macOS input path.
+### Milestone 1 — Display receiver
+- QR pairing
+- WebRTC offer/answer/ICE signaling
+- fullscreen video playback
+- reconnect state
 
-One-time setup:
+### Milestone 2 — Android companion
+- native Android project
+- MediaProjection screen capture
+- hardware video encoding
+- WebRTC sender
+- QR scanner
 
-```bash
-bash scripts/macos/setup-karabiner.sh
-```
+### Milestone 3 — FullRoid control integration
+- determine the most reliable Android input path supported by FullRoid
+- console-aware layouts for NES, SNES, Genesis, N64, GameCube, PlayStation, PS2, and arcade
+- input latency tuning
 
-Then run:
+### Milestone 4 — TV targets
+- browser-capable smart TVs
+- Android TV / Google TV receiver
+- optional Google Cast support
 
-```bash
-python3 receiver/retropad_receiver.py \
-  --host 127.0.0.1:8080 \
-  --room ABC123 \
-  --driver macos-karabiner
-```
+## Design principles
 
-Replace `ABC123` with the room code displayed by the browser receiver.
-
-See `docs/macOS-OpenEmu.md` for details.
-
-## Linux / Raspberry Pi
-
-Use the native uinput receiver:
-
-```bash
-python3 receiver/retropad_receiver.py --room ABC123 --driver linux-uinput
-```
-
-RetroPie and RetroArch can then map the generated virtual gamepad like a normal local controller.
-
-## Windows
-
-Use the native virtual gamepad receiver:
-
-```bash
-python receiver/retropad_receiver.py --room ABC123 --driver windows-vgamepad
-```
-
-## Development
-
-```bash
-npm test
-python3 -m py_compile receiver/retropad_receiver.py receiver/drivers/*.py
-```
-
-## Project direction
-
-The finished experience should require no account, cloud service, Bluetooth pairing menu, or IP-address entry. The target flow is:
-
-1. Start RetroPad Receiver.
-2. Scan a QR code.
-3. Phone becomes P1.
-4. Additional phones become P2-P4.
-5. The emulator receives each phone as usable local input.
+- No account required.
+- Local network first.
+- ROMs and game state remain on the phone.
+- The display device should not need an emulator.
+- QR pairing should be the default setup path.
+- Gaming latency takes priority over visual polish.
